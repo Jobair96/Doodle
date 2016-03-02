@@ -1,130 +1,224 @@
-import java.util.Observable;
-import java.util.Observer;
+import java.util.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import javax.swing.filechooser.*;
 
-public class MenuBarView extends JPanel implements Observer {
-
+public class MenuBarView extends JMenuBar implements Observer {
     private static final long serialVersionUID = -9438437L;
 
     private Model model;
 
-    private JMenuBar menuBar;
     private JMenu file, view;
-    private JMenuItem save, load, create, exit;
+    private JMenuItem saveBinary, loadBinary, saveText, loadText, create, exit;
     private JMenuItem fullSize, fitWindow;
-
-    //private static JFileChooser chooser;
 
     private JTextField filename, directory;
 
-    public JMenuBar getMenuBar() {
-
-        return menuBar;
-
-    }
+    private JFileChooser fileChooser;
+    private FileNameExtensionFilter txtFilter, binaryFilter;
 
     public MenuBarView(Model model) {
+        super();
+
+
+        // set selected filter
+        // chooser.setFileFilter(xmlfilter);
+
+        fileChooser = new JFileChooser();
+
+        fileChooser.setFileFilter(new FileNameExtensionFilter("binary", "bin"));
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("text", "txt"));
 
         this.model = model;
 
-        menuBar = new JMenuBar();
-
         // Build the first heading on the menu bar
         file = new JMenu("File");
-        menuBar.add(file);
+        this.add(file);
 
         // Build the second heading on the menu bar
         view = new JMenu("View");
-        menuBar.add(view);
+        this.add(view);
 
         // Build the options for the 'file' option
-        save = new JMenuItem("Save Doodle", null); // Null for images. Add Image later!
-        file.add(save);
 
-        // Add an action listener to open a dialog when save is clicked
-        save.addActionListener(new ActionListener() {
+        // The option for creating a new doodle
+        create = new JMenuItem("Create New Doodle", null); // Null for images. Add Image later!
+        file.add(create);
+
+        create.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
+                int dialogButton = JOptionPane.YES_NO_OPTION;
 
+                if(!model.getPointList().isEmpty()) {
+                    int dialogResult = JOptionPane.showConfirmDialog (null, "You have content on your current Doodle. If you would like to continue without saving, or if you have already saved the Doodle, please click YES. If you would like to save the current Doodle, click NO, then save the Doodle.", "Warning", dialogButton);
+
+                    if(dialogResult == JOptionPane.YES_OPTION){
+                        model.resetDoodle();
+                    }
+                } else {
+                    model.resetDoodle();
+                }
+            }
+        });
+
+        saveBinary = new JMenuItem("Save Doodle as Binary", null); 
+        file.add(saveBinary);
+
+        saveBinary.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 // Save dialog
                 int rVal = fileChooser.showSaveDialog(MenuBarView.this);
+
                 if (rVal == JFileChooser.APPROVE_OPTION) {
                     filename.setText(fileChooser.getSelectedFile().getName());
                     directory.setText(fileChooser.getCurrentDirectory().toString());
 
-                    // Now serialize to the file
-                    try {
-                        FileOutputStream outputFileStream = new FileOutputStream(directory.getText() + "/" + filename.getText());
-                        ObjectOutputStream outputStream = new ObjectOutputStream(outputFileStream);
-
-                        outputStream.writeObject(MenuBarView.this.model);
-                        outputStream.close();
-                        outputFileStream.close();
-
-                    } catch(IOException exception) {
-                        exception.printStackTrace();
-                    }
+                    MenuBarView.this.model.saveBinary(directory.getText() + "/" + filename.getText());
                 }
 
                 if (rVal == JFileChooser.CANCEL_OPTION) {
-                    filename.setText("You pressed cancel");
+                    filename.setText("");
                     directory.setText("");
                 }
             }
         });
 
-        load = new JMenuItem("Load Doodle", null); // Null for images. Add Image later!
-        file.add(load);
+        loadBinary = new JMenuItem("Load Doodle from Binary", null); // Null for images. Add Image later!
+        file.add(loadBinary);
 
-        load.addActionListener(new ActionListener() {
+        loadBinary.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
+                int dialogButton = JOptionPane.YES_NO_OPTION;
+
+                if(!model.getPointList().isEmpty()) {
+                    int dialogResult = JOptionPane.showConfirmDialog (null, "You have content on your current Doodle. If you would like to load a new Doodle without saving the current one, or if you have already saved the current Doodle, please click YES. If you would like to save the current Doodle, click NO, then save the Doodle.", "Warning", dialogButton);
+
+                    if(dialogResult == JOptionPane.NO_OPTION) {
+                        return;
+                    }
+                }
 
                 // Open dialog box
                 int rVal = fileChooser.showOpenDialog(MenuBarView.this);
+
                 if (rVal == JFileChooser.APPROVE_OPTION) {
                     filename.setText(fileChooser.getSelectedFile().getName());
                     directory.setText(fileChooser.getCurrentDirectory().toString());
 
                     // Now deserialize from file
-                    try {
-                        FileInputStream inputFileStream = new FileInputStream(directory.getText() + "/" + filename.getText());
-                        ObjectInputStream inputStream = new ObjectInputStream(inputFileStream);
-
-                        MenuBarView.this.model = (Model) inputStream.readObject();
-                        inputStream.close();
-                        inputFileStream.close();
-
-                    } catch(Exception exception) {
-                        exception.printStackTrace();
-                    }
+                    MenuBarView.this.model.loadBinary(directory.getText() + "/" + filename.getText());
                 }
 
                 if (rVal == JFileChooser.CANCEL_OPTION) {
-                    filename.setText("You pressed cancel");
+                    filename.setText("");
                     directory.setText("");
                 }
             }
         });
 
-        create = new JMenuItem("Create New Doodle", null); // Null for images. Add Image later!
-        file.add(create);
+        saveText = new JMenuItem("Save Doodle as Text", null); // Null for images. Add Image later!
+        file.add(saveText);
 
-        exit = new JMenuItem("Exit", null); // Null for images. Add Image later!
+        // Add an action listener to open a dialog when save is clicked
+        saveText.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int rVal = fileChooser.showSaveDialog(MenuBarView.this);
+
+                if (rVal == JFileChooser.APPROVE_OPTION) {
+                    filename.setText(fileChooser.getSelectedFile().getName());
+                    directory.setText(fileChooser.getCurrentDirectory().toString());
+
+                    MenuBarView.this.model.saveText(directory.getText() + "/" + filename.getText());
+                }
+
+                if (rVal == JFileChooser.CANCEL_OPTION) {
+                    filename.setText("");
+                    directory.setText("");
+                }
+            }
+        });
+
+        loadText = new JMenuItem("Load Doodle from Text", null); // Null for images. Add Image later!
+        file.add(loadText);
+
+        // Add an action listener to open a dialog when save is clicked
+        loadText.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int dialogButton = JOptionPane.YES_NO_OPTION;
+
+                if(!model.getPointList().isEmpty()) {
+                    int dialogResult = JOptionPane.showConfirmDialog (null, "You have content on your current Doodle. If you would like to load a new Doodle without saving the current one, or if you have already saved the current Doodle, please click YES. If you would like to save the current Doodle, click NO, then save the Doodle.", "Warning", dialogButton);
+
+                    if(dialogResult == JOptionPane.NO_OPTION) {
+                        return;
+                    }
+                }
+
+                int rVal = fileChooser.showOpenDialog(MenuBarView.this);
+
+                if (rVal == JFileChooser.APPROVE_OPTION) {
+                    filename.setText(fileChooser.getSelectedFile().getName());
+                    directory.setText(fileChooser.getCurrentDirectory().toString());
+
+                    MenuBarView.this.model.loadText(directory.getText() + "/" + filename.getText());
+                }
+
+                if (rVal == JFileChooser.CANCEL_OPTION) {
+                    filename.setText("");
+                    directory.setText("");
+                }
+            }
+        });
+
+        exit = new JMenuItem("Exit", null);
         file.add(exit);
 
+        exit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(!model.getPointList().isEmpty()) {
+                    int dialogButton = JOptionPane.YES_NO_OPTION;
+                    int dialogResult = JOptionPane.showConfirmDialog (null, "You have content on your current Doodle. If you would like to exit the application without saving, or if you have already saved the current Doodle, please click YES. If you would like to save the current Doodle, click NO, then save the Doodle.", "Warning", dialogButton);
+
+                    if(dialogResult == JOptionPane.YES_OPTION){
+                        model.closeApplication();
+                    }
+                } else {
+                    model.closeApplication();
+                }
+            }
+        });
+
         // Build the options for the 'view' option
-        fullSize = new JMenuItem("Full Size", null); // Null for images. Add Image later!
+        fullSize = new JMenuItem("Full Size", null); 
         view.add(fullSize);
+
+        fullSize.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                model.setCanvasImageFullSize(true);
+            }
+
+        });
 
         fitWindow = new JMenuItem("Fit Window", null); // Null for images. Add Image later!
         view.add(fitWindow);
+
+        fitWindow.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                model.setCanvasImageFullSize(false);
+            }
+
+        });
 
         this.filename = new JTextField();
         this.directory = new JTextField();
@@ -133,14 +227,4 @@ public class MenuBarView extends JPanel implements Observer {
     public void update(Observable observable, Object arg) {
 
     }
-
-    /*
-       public void serializeStaticState(ObjectOutputStream os) throws IOException {
-       os.writeObject(model);
-       }
-
-       public void deserializeStaticState(ObjectInputStream os) throws IOException {
-       model = (Model) os.readObject();
-       }*/
-
 }

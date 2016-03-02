@@ -18,6 +18,7 @@ public class Main{
         MenuBarView menuBarView = new MenuBarView(model);
         ColorPaletteView colorPaletteView = new ColorPaletteView(model);
         StrokeThicknessView strokeThicknessView = new StrokeThicknessView(model);
+        ScrollableCanvasView scrollableCanvasView = new ScrollableCanvasView(model, drawableCanvasView);
 
         // tell Model about views 
         model.addObserver(drawableCanvasView);
@@ -25,12 +26,10 @@ public class Main{
         model.addObserver(menuBarView);
         model.addObserver(colorPaletteView);
         model.addObserver(strokeThicknessView);
-
+        model.addObserver(scrollableCanvasView);
 
         // Setting some container properties
         container.setBackground(Color.GRAY);
-
-
 
         // Sidebar itself is composed of different views using a boxlayout
         JPanel sidebar = new JPanel();
@@ -38,26 +37,22 @@ public class Main{
         sidebar.add(colorPaletteView);
         sidebar.add(strokeThicknessView);
 
-
-        // Add the views
+        // Add the views to the container
         container.add(sidebar, BorderLayout.WEST);
-        container.add(drawableCanvasView, BorderLayout.CENTER);
+        container.add(scrollableCanvasView, BorderLayout.CENTER);
         container.add(playBackView, BorderLayout.SOUTH);
 
-
-        
-
-
-
-
-
         // Setting the frame options
-        frame.setJMenuBar(menuBarView.getMenuBar());
-        frame.setMinimumSize(new Dimension(400,300));
+        frame.setJMenuBar(menuBarView);
+        frame.setMinimumSize(new Dimension(500,500));
         frame.pack();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
-        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+        frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH); // To set maximum screen size as default
         frame.setVisible(true);
+
+        // We do the following so this can get the CTRL-C Keystroke
+        drawableCanvasView.setFocusable(true);
+        drawableCanvasView.requestFocus();
     } 
 }

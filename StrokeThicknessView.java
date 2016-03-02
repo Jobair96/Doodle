@@ -1,12 +1,10 @@
-import java.util.Observable;
-import java.util.Observer;
+import java.util.*;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.event.*;
 
 public class StrokeThicknessView extends JPanel implements Observer {
-
     private static final long serialVersionUID = -28938293833L;
 
     private Model model;
@@ -26,37 +24,31 @@ public class StrokeThicknessView extends JPanel implements Observer {
         // Setup the event to go to the "controller"
         // (this anonymous class is essentially the controller)
         comboBox.addItemListener(new ItemListener() {
-
             @Override
             public void itemStateChanged(ItemEvent e) {
                 if (e.getStateChange() == ItemEvent.SELECTED) {
-                   model.setLineType((LineType) e.getItem());
+                    model.setLineType((LineType) e.getItem());
                 }
             }
         });
     }
 
-    public class LineRenderer extends JPanel implements ListCellRenderer {
+    public void update(Observable observable, Object arg) {
+        LineType lineType = model.getLineType();
 
-        private static final long serialVersionUID = -28938293833L;
+        if(lineType == LineType.NORMAL) {
+            comboBox.setSelectedItem(LineType.NORMAL);
+        } else if(lineType == LineType.THICKER) {
+            comboBox.setSelectedItem(LineType.THICKER);
+        } else if(lineType == LineType.THICKEST) {
+            comboBox.setSelectedItem(LineType.THICKEST);
+        }
+    }
+
+    private class LineRenderer extends JPanel implements ListCellRenderer {
+        private static final long serialVersionUID = 4893482901L;
 
         private LineType value;
-
-        @Override
-        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-
-            if (value instanceof LineType) {
-
-                setLineType((LineType) value);
-
-            } else {
-
-                setLineType(null);
-
-            }
-
-            return this;
-        }
 
         @Override
         protected void paintComponent(Graphics g) {
@@ -66,11 +58,17 @@ public class StrokeThicknessView extends JPanel implements Observer {
                 g2d.setStroke(value.getStroke());
                 g.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2);
             }
-
         }
 
-        private void setLineType(LineType value) {
-            this.value = value;
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            if (value instanceof LineType) {
+                setLineType((LineType) value);
+            } else {
+                setLineType(null);
+            }
+
+            return this;
         }
 
         @Override
@@ -78,10 +76,8 @@ public class StrokeThicknessView extends JPanel implements Observer {
             return new Dimension(50, 20);
         }
 
+        private void setLineType(LineType value) {
+            this.value = value;
+        }
     }
-
-    public void update(Observable observable, Object arg) {
-
-    }
-
 }

@@ -7,9 +7,11 @@ import java.awt.*;
 import javax.swing.*;
 import java.awt.event.*;
 import javax.swing.event.*;
+import java.awt.Image.*;
+import java.io.*;
+import javax.imageio.*;
 
 public class PlayBackView extends JPanel implements Observer {
-
     private static final long serialVersionUID = -39291933L;
 
     private Model model;
@@ -17,18 +19,25 @@ public class PlayBackView extends JPanel implements Observer {
     // The following are the gui elements
     private JButton play, start, end;
     private JSlider progress;
-    private JLabel time;
     private JPanel row;
 
-    private Timer increaseValue, decreaseValue, decreaseThenIncreaseValue;
+    // Timers for increasing and decreasing slider at certian values
+    private Timer increaseValue;
 
     public PlayBackView(Model model) {
         this.model = model;
 
-        this.play = new JButton("Play");
-        this.start = new JButton("Start");
-        this.end = new JButton("End");
         this.progress = new JSlider();
+
+        // Setting up the icons
+        Icon playIcon = new ImageIcon("Play.png");
+        this.play = new JButton(playIcon);
+
+        Icon endIcon = new ImageIcon("End.png");
+        this.end = new JButton(endIcon);
+
+        Icon startIcon = new ImageIcon("Start.png");
+        this.start = new JButton(startIcon);
 
         // Put the above into a row
         this.row = new JPanel();
@@ -43,9 +52,9 @@ public class PlayBackView extends JPanel implements Observer {
         this.row.add(end);
 
         // Setting some properties of the JSlider
-        progress.setMajorTickSpacing(50);
+        progress.setMajorTickSpacing(0);
         progress.setPaintTicks(true);
-        progress.setPaintLabels(true);
+        progress.setPaintLabels(false);
         progress.setValue(0);
 
         // And add them to this component.
@@ -54,7 +63,6 @@ public class PlayBackView extends JPanel implements Observer {
 
         // Setup the event to go to the "controller"
         // (this anonymous class is essentially the controller)
-
         progress.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent evt) {
@@ -64,7 +72,6 @@ public class PlayBackView extends JPanel implements Observer {
                     int value = slider.getValue();
                     model.setSliderPosition(value);
                 }
-
             }
         });
 
@@ -74,7 +81,7 @@ public class PlayBackView extends JPanel implements Observer {
                 PlayBackView.this.showEntireAnimation();  
             }
         });
-        
+
         start.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -89,10 +96,10 @@ public class PlayBackView extends JPanel implements Observer {
             }
         });
 
+        // Initialize timers
         increaseValue = new Timer(1, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-            
                 if(progress.getMaximum() != progress.getValue()) {
                     progress.setValue(progress.getValue() + 1); 
                     model.setSliderPosition(progress.getValue());
@@ -101,26 +108,18 @@ public class PlayBackView extends JPanel implements Observer {
                 }
             }
         });
-
-        decreaseValue = new Timer(1, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-            
-                if(progress.getMinimum() != progress.getValue()) {
-                    progress.setValue(progress.getValue() - 1); 
-                    model.setSliderPosition(progress.getValue());
-                } else {
-                    ((Timer) e.getSource()).stop(); 
-                }
-            }
-        });
-        
     }
 
     public void update(Observable observable, Object arg) {
         progress.setMinimum(0);
         progress.setMaximum(model.getPointList().size());
         progress.setValue(model.getSliderPosition());
+
+        if(!model.getPointList().isEmpty()) {
+            enableSliderAndButtons(); 
+        } else {
+            disableSliderAndButtons(); 
+        }
     }
 
     @Override
@@ -134,11 +133,24 @@ public class PlayBackView extends JPanel implements Observer {
     }
 
     public void goToBeginning() {
-        decreaseValue.start();
+        model.setSliderPosition(progress.getMinimum());
     }
 
     public void goToEnd() {
-        increaseValue.start();
+        model.setSliderPosition(progress.getMaximum());
     }
 
+    private void disableSliderAndButtons() {
+        play.setEnabled(false);
+        start.setEnabled(false);
+        end.setEnabled(false);
+        progress.setEnabled(false);
+    }
+
+    private void enableSliderAndButtons() {
+        play.setEnabled(true);
+        start.setEnabled(true);
+        end.setEnabled(true);
+        progress.setEnabled(true);
+    }
 }
